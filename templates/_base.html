@@ -1,0 +1,376 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="DrawWithMe - A collaborative drawing platform for artists">
+    <title>{% block title %}{% endblock %} | DrawWithMe</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Work+Sans:wght@300;400;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --color-canvas: #F5F3EF;
+            --color-ink: #1A1718;
+            --color-accent: #E76F51;
+            --color-wash: #E9C4B5;
+            --color-sage: #84A59D;
+            --color-mobile-menu: #E9C4B5;  /* Added this line */
+        }
+        
+        body {
+            font-family: 'Work Sans', sans-serif;
+            background-color: var(--color-canvas);
+            color: var(--color-ink);
+        }
+        
+        h1, h2, h3 {
+            font-family: 'Playfair Display', serif;
+        }
+        
+        .nav-link {
+            position: relative;
+            display: inline-block;
+            transition: color 0.3s ease;
+        }
+        
+        .nav-link::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            bottom: -2px;
+            left: 50%;
+            background-color: var(--color-accent);
+            transition: all 0.3s ease;
+        }
+        
+        .nav-link:hover::after {
+            width: 100%;
+            left: 0;
+        }
+        
+        .brush-stroke {
+            position: relative;
+            display: inline-block;
+        }
+        
+        .brush-stroke::before {
+            content: '';
+            position: absolute;
+            bottom: -4px;
+            left: -8px;
+            right: -8px;
+            height: 12px;
+            background-color: var(--color-wash);
+            z-index: -1;
+            transform: rotate(-1deg);
+            transition: transform 0.3s ease;
+        }
+        
+        .brush-stroke:hover::before {
+            transform: rotate(1deg) scale(1.05);
+        }
+        
+        .artistic-button {
+            background-color: var(--color-ink);
+            color: var(--color-canvas);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+            transform: translateY(0);
+        }
+        
+        .artistic-button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .artistic-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: var(--color-accent);
+            transition: all 0.5s ease;
+            z-index: 1;
+        }
+        
+        .artistic-button:hover::before {
+            left: 0;
+        }
+        
+        .artistic-button span {
+            position: relative;
+            z-index: 2;
+        }
+
+        .hamburger {
+            width: 24px;
+            height: 20px;
+            position: relative;
+            cursor: pointer;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;  /* Center vertically */
+            padding: 0;  /* Remove any padding */
+            margin: auto 0;  /* Center vertically in the nav */
+        }
+
+        .hamburger span {
+            display: block;
+            width: 100%;
+            height: 2px;
+            background-color: var(--color-ink);
+            transition: all 0.3s ease;
+            position: absolute;  /* Position spans absolutely */
+        }
+
+        /* Position the three lines with proper spacing */
+        .hamburger span:nth-child(1) {
+            top: 0;
+        }
+
+        .hamburger span:nth-child(2) {
+            top: 50%;
+            transform: translateY(-50%);
+        }
+
+        .hamburger span:nth-child(3) {
+            bottom: 0;
+        }
+
+        .mobile-menu {
+            display: none;
+            transform: translateY(-10px);
+            opacity: 0;
+            transition: all 0.3s ease;
+            background-color: var(--color-mobile-menu);  /* Using the wash color */
+        }
+
+        .mobile-menu.active {
+            display: block;
+            transform: translateY(0);
+            opacity: 1;
+        }
+
+        /* Style updates for mobile menu items to ensure good contrast */
+        .mobile-menu .nav-link {
+            color: var(--color-ink);  /* Ensure text is dark enough */
+        }
+
+        .mobile-menu .artistic-button {
+            background-color: var(--color-ink);
+            color: var(--color-canvas);
+        }
+
+        /* When hamburger is active, adjust the spans for X shape */
+        .hamburger.active span:nth-child(1) {
+            top: 50%;
+            transform: translateY(-50%) rotate(45deg);
+        }
+
+        .hamburger.active span:nth-child(2) {
+            opacity: 0;
+        }
+
+        .hamburger.active span:nth-child(3) {
+            bottom: 50%;
+            transform: translateY(50%) rotate(-45deg);
+        }
+
+        
+
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .desktop-menu {
+            animation: fadeIn 0.5s ease;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-menu.active {
+                animation: fadeIn 0.3s ease;
+            }
+        }
+    </style>
+    {% block extra_css %}{% endblock %}
+</head>
+<body class="min-h-screen flex flex-col">
+    <!-- Navigation -->
+    <nav class="bg-white/90 backdrop-blur-sm fixed w-full z-50 shadow-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="flex justify-between h-16 items-center">
+                <!-- Logo Section -->
+                <div class="flex items-center">
+                    <a href="{% url 'index' %}" class="flex items-center space-x-3 group">
+                        <span class="text-xl sm:text-2xl font-bold brush-stroke">DrawWithMe</span>
+                    </a>
+                </div>
+                
+                <!-- Desktop Menu (XL and above) -->
+                <div class="hidden xl:flex items-center space-x-8">
+                    {% if user.is_authenticated %}
+                        <a href="#" class="nav-link text-gray-600 hover:text-gray-900">Gallery</a>
+                        <a href="#" class="nav-link text-gray-600 hover:text-gray-900">Collaborate</a>
+                        <div class="relative group">
+                            <button class="nav-link text-gray-600 hover:text-gray-900 flex items-center space-x-2">
+                                <img src="{{ profile.avatar.url }}" 
+                                    alt="Profile" 
+                                    class="w-8 h-8 rounded-full">
+                                <span>{{ user.username }}</span>
+                            </button>
+                            <div class="absolute right-0 w-48 mt-2 py-2 bg-white rounded-lg shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300">
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Profile</a>
+                                <a href="#" class="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100">Settings</a>
+                                <hr class="my-2">
+                                <a href="{% url 'account_logout' %}" class="block px-4 py-2 text-sm text-red-600 hover:bg-gray-100">Logout</a>
+                            </div>
+                        </div>
+                        <a href="{% url 'create_artwork' %}" class="artistic-button px-6 py-2 rounded-full">
+                            <span>Start Drawing</span>
+                        </a>
+                    {% else %}
+                        <a href="{% url 'account_login' %}" class="nav-link text-gray-600 hover:text-gray-900">Login</a>
+                        <a href="{% url 'account_signup' %}" class="artistic-button px-6 py-2 rounded-full">
+                            <span>Join Now</span>
+                        </a>
+                    {% endif %}
+                </div>
+
+                <!-- Hamburger Menu (Below XL) -->
+                <button class="xl:hidden flex items-center justify-center w-10 h-10 focus:outline-none" aria-label="Menu">
+                    <div class="hamburger">
+                        <span></span>
+                        <span></span>
+                        <span></span>
+                    </div>
+                </button>
+            </div>
+
+            <!-- Mobile Menu (Below XL) -->
+            <div class="mobile-menu xl:hidden absolute top-16 left-0 w-full shadow-lg">
+                <div class="px-6 py-6 space-y-4 bg-[var(--color-mobile-menu)]">
+                    {% if user.is_authenticated %}
+                        <div class="flex items-center space-x-3 pb-4 border-b border-gray-200/20">
+                            <img src="{{ profile.avatar.url }}" 
+                                alt="Profile" 
+                                class="w-10 h-10 rounded-full">
+                            <span class="font-medium text-gray-900">{{ user.username }}</span>
+                        </div>
+                        <div class="space-y-3 py-2">
+                            <a href="#" class="block nav-link text-gray-800 hover:text-gray-900 py-2">Gallery</a>
+                            <a href="#" class="block nav-link text-gray-800 hover:text-gray-900 py-2">Collaborate</a>
+                            <a href="#" class="block nav-link text-gray-800 hover:text-gray-900 py-2">Profile</a>
+                            <a href="#" class="block nav-link text-gray-800 hover:text-gray-900 py-2">Settings</a>
+                        </div>
+                        <div class="pt-4 space-y-4 border-t border-gray-200/20">
+                            <a href="#={% url 'create_artwork' %}" class="block artistic-button px-6 py-2.5 rounded-full text-center">
+                                <span>Start Drawing</span>
+                            </a>
+                            <a href="{% url 'account_logout' %}" class="block text-red-600 hover:text-red-700 py-2 text-center">Logout</a>
+                        </div>
+                    {% else %}
+                        <div class="space-y-4">
+                            <a href="{% url 'account_login' %}" class="block nav-link text-gray-800 hover:text-gray-900 py-2">Login</a>
+                            <a href="{% url 'account_signup' %}" class="block artistic-button px-6 py-2.5 rounded-full text-center">
+                                <span>Join Now</span>
+                            </a>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+
+
+    <!-- Main Content -->
+    <main class="flex-grow mt-16">
+        {% block content %}{% endblock %}
+    </main>
+
+    <!-- Enhanced Footer -->
+    <footer class="bg-white/90 backdrop-blur-sm border-t border-gray-100">
+        <div class="max-w-7xl mx-auto px-4 py-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <div class="flex flex-col space-y-4">
+                    <span class="text-xl font-bold brush-stroke">DrawWithMe</span>
+                    <p class="text-sm text-gray-500">A community-driven platform for artists to create, collaborate, and inspire.</p>
+                </div>
+                <div class="flex flex-col space-y-4">
+                    <h3 class="font-medium text-gray-900">Quick Links</h3>
+                    <div class="flex flex-col space-y-2">
+                        <a href="#" class="nav-link text-gray-500 hover:text-gray-900">About Us</a>
+                        <a href="#" class="nav-link text-gray-500 hover:text-gray-900">Features</a>
+                        <a href="#" class="nav-link text-gray-500 hover:text-gray-900">Pricing</a>
+                        <a href="#" class="nav-link text-gray-500 hover:text-gray-900">Blog</a>
+                    </div>
+                </div>
+                <div class="flex flex-col space-y-4">
+                    <h3 class="font-medium text-gray-900">Support</h3>
+                    <div class="flex flex-col space-y-2">
+                        <a href="#" class="nav-link text-gray-500 hover:text-gray-900">FAQ</a>
+                        <a href="#" class="nav-link text-gray-500 hover:text-gray-900">Contact</a>
+                        <a href="#" class="nav-link text-gray-500 hover:text-gray-900">Privacy Policy</a>
+                        <a href="#" class="nav-link text-gray-500 hover:text-gray-900">Terms of Service</a>
+                    </div>
+                </div>
+            </div>
+            <div class="mt-8 pt-8 border-t border-gray-100">
+                <div class="flex flex-col md:flex-row justify-between items-center space-y-4 md:space-y-0">
+                    <p class="text-sm text-gray-500">© 2024 DrawWithMe. All rights reserved.</p>
+                    <p class="text-sm text-gray-500">Made with 💫 hope by 
+                        <a href="https://www.instagram.com/atari.can/" 
+                           target="_blank" 
+                           rel="noopener noreferrer"
+                           class="nav-link font-medium hover:text-accent transition-colors">
+                            atary
+                        </a>
+                    </p>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const hamburger = document.querySelector('.hamburger');
+            const mobileMenu = document.querySelector('.mobile-menu');
+
+            function toggleMenu() {
+                hamburger.classList.toggle('active');
+                mobileMenu.classList.toggle('active');
+                document.body.style.overflow = mobileMenu.classList.contains('active') ? 'hidden' : '';
+            }
+
+            hamburger.addEventListener('click', toggleMenu);
+
+            // Close mobile menu when clicking outside
+            document.addEventListener('click', function(event) {
+                const isClickInside = hamburger.contains(event.target) || mobileMenu.contains(event.target);
+                if (!isClickInside && mobileMenu.classList.contains('active')) {
+                    toggleMenu();
+                }
+            });
+
+            // Handle escape key
+            document.addEventListener('keydown', function(event) {
+                if (event.key === 'Escape' && mobileMenu.classList.contains('active')) {
+                    toggleMenu();
+                }
+            });
+        });
+    </script>
+
+    {% block extra_js %}{% endblock %}
+</body>
+</html>

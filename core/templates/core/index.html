@@ -1,0 +1,60 @@
+{% extends '_base.html' %}
+{% block title %}Welcome{% endblock %}
+
+{% block content %}
+<div class="relative">
+    <!-- Hero Section -->
+    <section class="relative min-h-[80vh] flex items-center">
+        <div class="absolute inset-0 bg-gradient-to-br from-sage/20 to-wash/20"></div>
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                <div class="space-y-8">
+                    <h1 class="text-5xl md:text-7xl font-bold leading-tight">
+                        <span class="brush-stroke">Create</span> & 
+                        <span class="brush-stroke">Collaborate</span>
+                    </h1>
+                    <p class="text-xl text-gray-600 max-w-lg">
+                        Join our creative community where artists connect, collaborate, and create together in real-time.
+                    </p>
+                    <div class="flex space-x-4">
+                        <a href="{% url 'create_artwork' %}" class="artistic-button px-8 py-4 rounded-full">
+                            <span>Start Drawing</span>
+                        </a>
+                        <a href="#" class="px-8 py-4 border-2 border-ink rounded-full hover:bg-ink hover:text-canvas transition-colors">
+                            Learn More
+                        </a>
+                    </div>
+                </div>
+                <div class="relative">
+                    <div class="aspect-square rounded-2xl bg-wash/30 p-8">
+                        <!-- Placeholder for illustration or canvas preview -->
+                        <div class="w-full h-full rounded-xl bg-white/50 backdrop-blur-sm shadow-lg"></div>
+                    </div>
+                    <div class="absolute -bottom-6 -left-6 w-24 h-24 bg-accent rounded-full animate-pulse"></div>
+                    <div class="absolute -top-6 -right-6 w-32 h-32 bg-sage rounded-full animate-pulse delay-150"></div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-20 bg-white/50 backdrop-blur-sm">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-12">
+                <div class="space-y-4">
+                    <h3 class="text-2xl font-bold">Solo Creation</h3>
+                    <p class="text-gray-600">Express yourself freely with our intuitive drawing tools and canvas.</p>
+                </div>
+                <div class="space-y-4">
+                    <h3 class="text-2xl font-bold">Real-time Collaboration</h3>
+                    <p class="text-gray-600">Connect with artists worldwide and create masterpieces together.</p>
+                </div>
+                <div class="space-y-4">
+                    <h3 class="text-2xl font-bold">Creative Games</h3>
+                    <p class="text-gray-600">Challenge yourself with fun drawing games and competitions.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+</div>
+{% endblock %}

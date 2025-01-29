@@ -1,0 +1,65 @@
+<!-- Sign-Up Template -->
+{% extends '_base.html' %}
+{% load socialaccount %}
+
+{% block title %}Sign Up{% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-[80vh]">
+    <div class="max-w-sm w-full bg-white shadow-lg rounded-lg p-6">
+        <h1 class="text-2xl font-semibold text-center mb-4">Sign Up</h1>
+
+        <div class="flex justify-center mb-4">
+            <a href="{% provider_login_url "google" %}" class="artistic-button px-6 py-2 rounded-full">
+                <span>Sign up with Google</span>
+            </a>
+        </div>
+
+        <div class="text-center text-gray-500 mb-4">or</div>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="id_username" class="block text-sm font-medium text-gray-700">Username</label>
+                {{ form.username }}
+            </div>
+
+            <div>
+                <label for="id_email" class="block text-sm font-medium text-gray-700">Email</label>
+                {{ form.email }}
+            </div>
+
+            <div>
+                <label for="id_password1" class="block text-sm font-medium text-gray-700">Password</label>
+                {{ form.password1 }}
+            </div>
+
+            <div>
+                <label for="id_password2" class="block text-sm font-medium text-gray-700">Repeat Password</label>
+                {{ form.password2 }}
+            </div>
+
+            {% if form.errors or form.non_field_errors %}
+                <div class="text-sm text-red-500">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <button type="submit" class="w-full artistic-button px-4 py-2 rounded-lg">
+                <span>Sign Up</span>
+            </button>
+        </form>
+
+        <div class="text-center mt-4 text-sm">
+            Already have an account? <a href="{% url 'account_login' %}" class="nav-link font-medium hover:text-accent transition-colors">Log In</a>
+        </div>
+    </div>
+</div>
+{% endblock %}

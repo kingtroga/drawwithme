@@ -1,0 +1,59 @@
+{% extends '_base.html' %}
+{% load socialaccount %}
+
+{% block title %}Login{% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-[80vh]">
+    <div class="max-w-sm w-full bg-white shadow-lg rounded-lg p-6">
+        <h1 class="text-2xl font-semibold text-center mb-4">Login</h1>
+
+        <div class="flex justify-center mb-4">
+            <a href="{% provider_login_url 'google' %}" class="artistic-button px-6 py-2 rounded-full">
+                <span>Continue with Google</span>
+            </a>
+        </div>
+
+        <div class="text-center text-gray-500 mb-4">or</div>
+
+        <form method="post" class="space-y-4">
+            {% csrf_token %}
+            <div>
+                <label for="id_login" class="block text-sm font-medium text-gray-700">Username or Email</label>
+                {{ form.login }}
+            </div>
+
+            <div>
+                <label for="id_password" class="block text-sm font-medium text-gray-700">Password</label>
+                {{ form.password }}
+            </div>
+
+            {% if form.errors or form.non_field_errors %}
+                <div class="text-sm text-red-500">
+                    {% for field in form %}
+                        {% for error in field.errors %}
+                            <p>{{ error }}</p>
+                        {% endfor %}
+                    {% endfor %}
+                    {% for error in form.non_field_errors %}
+                        <p>{{ error }}</p>
+                    {% endfor %}
+                </div>
+            {% endif %}
+
+            <div class="flex items-center space-x-2">
+                {{ form.remember }}
+                <label for="id_remember" class="text-sm text-gray-700">Remember Me</label>
+            </div>
+
+            <button type="submit" class="w-full artistic-button px-4 py-2 rounded-lg">
+                <span>Log In</span>
+            </button>
+        </form>
+
+        <div class="text-center mt-4 text-sm">
+            Don't have an account? <a href="{% url 'account_signup' %}" class="nav-link font-medium hover:text-accent transition-colors">Sign up</a>
+        </div>
+    </div>
+</div>
+{% endblock %}
