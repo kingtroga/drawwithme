@@ -1,163 +1,266 @@
 document.addEventListener('DOMContentLoaded', function () {
+    // Canvas element setup
     const canvasElement = document.getElementById('drawing-canvas');
-    const container = canvasElement.parentElement;
-
-    const canvas = new fabric.Canvas('drawing-canvas', {
-        isDrawingMode: true // Enable drawing mode by default
-    });
-
-    let currentMode = 'pencil'; // Default mode
-
-    // Responsive Canvas Resizing Function
-    function resizeCanvas() {
-        const containerWidth = container.clientWidth;
-        const isMobile = window.innerWidth < 768; // Adjust for mobile breakpoints
-        const aspectRatio = isMobile ? 9 / 16 : 16 / 9; // Mobile: 9:16, Desktop: 16:9
-
-        const width = containerWidth;
-        const height = width * aspectRatio;
-
-        canvas.setWidth(width);
-        canvas.setHeight(height);
-        canvas.setZoom(1);
+    if (!canvasElement) {
+        console.error('Canvas element not found!');
+        return;
     }
 
-    // Disable selection on all objects
+    const container = canvasElement.parentElement;
+    const artworkForm = document.getElementById('artwork-form');
+    const saveButton = document.getElementById('save-artwork-btn');
+
+    let isEditMode = false;
+    let artworkId = null;
+    let resizeTimeout;
+
+    // Initialize Fabric.js Canvas
+    const canvas = new fabric.Canvas('drawing-canvas', {
+        isDrawingMode: true,
+        preserveObjectStacking: true,
+        fireRightClick: true
+    });
+
+    // Notification system
+    function showNotification(message, type = 'info') {
+        const notification = document.createElement('div');
+        notification.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg 
+            ${type === 'success' ? 'bg-green-100 text-green-800' : 
+             type === 'error' ? 'bg-red-100 text-red-800' : 'bg-blue-100 text-blue-800'}`;
+        notification.textContent = message;
+        document.body.appendChild(notification);
+        setTimeout(() => notification.remove(), 3000);
+    }
+
+    // Initialize brushes
+    let currentMode = 'pencil';
+    const drawingBrush = new fabric.PencilBrush(canvas);
+    const erasingBrush = new fabric.PencilBrush(canvas);
+
+    // JSON handling
+    function safeJSONParse(data) {
+        try {
+            const sanitized = data
+                .replace(/'/g, '"')
+                .replace(/False/g, 'false')
+                .replace(/True/g, 'true')
+                .replace(/None/g, 'null');
+            return JSON.parse(sanitized);
+        } catch (error) {
+            console.error('JSON parse error:', error);
+            return null;
+        }
+    }
+
+    // Canvas sizing
+    function getAspectRatio() {
+        return window.innerWidth < 768 ? 9/16 : 16/9;
+    }
+
+    function resizeCanvas() {
+        const containerWidth = container.clientWidth;
+        const aspectRatio = getAspectRatio();
+        const newHeight = containerWidth * aspectRatio;
+
+        canvas.setDimensions({
+            width: containerWidth,
+            height: newHeight
+        });
+        canvas.renderAll();
+    }
+
+    // Event handlers
+    window.addEventListener('resize', () => {
+        clearTimeout(resizeTimeout);
+        resizeTimeout = setTimeout(resizeCanvas, 100);
+    });
+
+    function initializeBrushes() {
+        erasingBrush.color = 'white';
+        erasingBrush.globalCompositeOperation = 'destination-out';
+        drawingBrush.color = document.getElementById('color-picker').value;
+        drawingBrush.width = parseInt(document.getElementById('brush-size').value, 10);
+        erasingBrush.width = drawingBrush.width;
+        canvas.backgroundColor = document.getElementById('background-color').value;
+        canvas.renderAll();
+    }
+
+    function loadCanvasState(data) {
+        canvas.clear().loadFromJSON(data, () => {
+            if (data.background) {
+                canvas.setBackgroundColor(data.background, canvas.renderAll.bind(canvas));
+            }
+            resizeCanvas();
+            initializeBrushes();
+        });
+    }
+
+    // Selection handling
     function disableSelection() {
         canvas.selection = false;
-        canvas.getObjects().forEach(obj => {
+        canvas.forEachObject(obj => {
             obj.selectable = false;
             obj.hasControls = false;
             obj.hasBorders = false;
         });
     }
 
-    // Initial resize and listen for window changes
-    resizeCanvas();
-    window.addEventListener('resize', resizeCanvas);
-
-    // Enable selection on all objects
     function enableSelection() {
         canvas.selection = true;
-        canvas.getObjects().forEach(obj => {
+        canvas.forEachObject(obj => {
             obj.selectable = true;
             obj.hasControls = true;
             obj.hasBorders = true;
         });
     }
 
-    // Initialize brushes
-    const drawingBrush = new fabric.PencilBrush(canvas);
-    const erasingBrush = new fabric.PencilBrush(canvas);
-    
-    // Configure erasing brush
-    erasingBrush.color = 'white';
-    erasingBrush.width = 5;
-    erasingBrush.globalCompositeOperation = 'destination-out';
-
-    // Set initial drawing brush settings
-    drawingBrush.width = 5;
-    drawingBrush.color = '#000000';
-
-    // Tool handlers
-    document.getElementById('selection-tool').onclick = () => {
-        currentMode = 'selection';
-        canvas.isDrawingMode = false;
-        enableSelection();
+    // Tools
+    const tools = {
+        pencil: () => {
+            currentMode = 'pencil';
+            canvas.isDrawingMode = true;
+            canvas.freeDrawingBrush = drawingBrush;
+            canvasElement.classList.add('cursor-pencil');
+            canvasElement.classList.remove('cursor-eraser');
+            disableSelection();
+        },
+        eraser: () => {
+            currentMode = 'eraser';
+            canvas.isDrawingMode = true;
+            canvas.freeDrawingBrush = erasingBrush;
+            canvasElement.classList.add('cursor-eraser');
+            canvasElement.classList.remove('cursor-pencil');
+            disableSelection();
+        },
+        selection: () => {
+            currentMode = 'selection';
+            canvas.isDrawingMode = false;
+            canvasElement.classList.remove('cursor-pencil', 'cursor-eraser');
+            enableSelection();
+        }
     };
 
-    document.getElementById('pencil-tool').onclick = () => {
-        currentMode = 'pencil';
-        canvas.isDrawingMode = true;
-        canvas.freeDrawingBrush = drawingBrush;
-        canvas.freeDrawingBrush.width = parseInt(document.getElementById('brush-size').value, 10);
-        canvas.freeDrawingBrush.color = document.getElementById('color-picker').value;
-        disableSelection();
-    };
+    // Event listeners
+    document.getElementById('pencil-tool').addEventListener('click', tools.pencil);
+    document.getElementById('eraser-tool').addEventListener('click', tools.eraser);
+    document.getElementById('selection-tool').addEventListener('click', tools.selection);
 
-    document.getElementById('eraser-tool').onclick = () => {
-        currentMode = 'eraser';
-        canvas.isDrawingMode = true;
-        canvas.freeDrawingBrush = erasingBrush;
-        canvas.freeDrawingBrush.width = parseInt(document.getElementById('brush-size').value, 10);
-        disableSelection();
-    };
-
-    // Handle brush size changes
     document.getElementById('brush-size').addEventListener('input', (e) => {
         const size = parseInt(e.target.value, 10);
-        if (canvas.freeDrawingBrush) {
-            canvas.freeDrawingBrush.width = size;
-            
-            // Update both brushes
-            drawingBrush.width = size;
-            erasingBrush.width = size;
-        }
+        drawingBrush.width = size;
+        erasingBrush.width = size;
+        if (canvas.isDrawingMode) canvas.freeDrawingBrush.width = size;
     });
 
-    // Handle color changes
     document.getElementById('color-picker').addEventListener('change', (e) => {
-        if (currentMode === 'pencil') {
-            drawingBrush.color = e.target.value;
-            if (canvas.freeDrawingBrush === drawingBrush) {
-                canvas.freeDrawingBrush.color = e.target.value;
+        drawingBrush.color = e.target.value;
+        if (currentMode === 'pencil') canvas.freeDrawingBrush.color = e.target.value;
+    });
+
+    document.getElementById('background-color').addEventListener('change', (e) => {
+        canvas.setBackgroundColor(e.target.value, () => canvas.renderAll());
+    });
+
+    // Form handling
+    async function handleArtworkSubmission(isUpdate = false) {
+        if (isUpdate && !artworkId) {
+            showNotification('Invalid artwork ID', 'error');
+            return;
+        }
+
+        const formData = new FormData();
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+
+        formData.append('title', document.getElementById('artwork-title').value || 'Untitled');
+        formData.append('description', document.getElementById('artwork-description')?.value || '');
+        formData.append('collaborators', Array.from(document.getElementById('collaborators').selectedOptions)
+            .map(opt => opt.value).join(','));
+        formData.append('canvas_data', JSON.stringify(canvas.toJSON()));
+        formData.append('background_color', canvas.backgroundColor);
+        formData.append('brush_size', document.getElementById('brush-size').value);
+        formData.append('drawing_color', document.getElementById('color-picker').value);
+        formData.append('csrfmiddlewaretoken', csrfToken);
+
+        try {
+            const pngDataUrl = canvas.toDataURL("image/png");
+            const response = await fetch(pngDataUrl);
+            const blob = await response.blob();
+            formData.append('image', blob, `artwork-${Date.now()}.png`);
+
+            const endpoint = isUpdate ? `/drawing/edit/${encodeURIComponent(artworkId)}/` : '/drawing/create/';
+            const method = isUpdate ? 'PUT' : 'POST';
+
+            const saveResponse = await fetch(endpoint, {
+                method: method,
+                body: formData,
+                headers: {'X-CSRFToken': csrfToken}
+            });
+
+            const contentType = saveResponse.headers.get('content-type');
+            if (!saveResponse.ok || !contentType?.includes('application/json')) {
+                throw new Error(await saveResponse.text());
+            }
+
+            const result = await saveResponse.json();
+            
+            if (result.success) {
+                showNotification('Artwork saved successfully!', 'success');
+                if (!isUpdate && result.artwork_id) {
+                    artworkId = result.artwork_id;
+                    window.history.replaceState({}, '', `/drawing/edit/${artworkId}/`);
+                }
+            } else {
+                showNotification(result.message || 'Error saving artwork', 'error');
+            }
+        } catch (error) {
+            console.error('Save Error:', error);
+            showNotification(
+                error.message.startsWith('<') ? 'Server error - check console' : error.message,
+                'error'
+            );
+        }
+    }
+
+    // Initialization
+    function initializeApplication() {
+        resizeCanvas();
+        initializeBrushes();
+        disableSelection();
+
+        if (artworkForm) {
+            isEditMode = artworkForm.dataset.artworkId !== undefined;
+            artworkId = artworkForm.dataset.artworkId || null;
+        }
+
+        if (saveButton) {
+            saveButton.addEventListener('click', (e) => {
+                e.preventDefault();
+                handleArtworkSubmission();
+            });
+        }
+
+        if (artworkForm) {
+            artworkForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                await handleArtworkSubmission(true);
+            });
+
+            if (isEditMode && artworkId) {
+                const canvasData = document.getElementById('canvas-data')?.value;
+                if (canvasData) {
+                    const parsedData = safeJSONParse(canvasData);
+                    if (parsedData) loadCanvasState(parsedData);
+                }
             }
         }
-    });
 
-    // Handle background color changes
-    document.getElementById('background-color').addEventListener('change', (e) => {
-        canvas.backgroundColor = e.target.value;
-        canvas.renderAll();
-    });
-
-    document.getElementById('save-artwork-btn').addEventListener('click', () => {
-        const title = document.getElementById('artwork-title').value || 'Untitled';
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
-        const canvasData = canvas.toJSON();
-        console.log("Hello World"); 
-        // Convert canvas to PNG
-        const pngDataUrl = canvas.toDataURL("image/png");
-        console.log("Generated PNG Data URL:", pngDataUrl); // Debugging
-    
-        const data = new FormData();  // Use FormData for image uploads
-        data.append('title', title);
-        data.append('canvas', JSON.stringify(canvasData));
-        data.append('csrfmiddlewaretoken', csrfToken);
-        
-        // Convert base64 PNG to Blob and append to FormData
-        fetch(pngDataUrl)
-            .then(res => res.blob())
-            .then(blob => {
-                console.log("Converted Blob:", blob); // Debugging
-                data.append('image', blob, 'artwork.png');  // Attach image file
-    
-                // If the artwork_id exists, send it
-                if (window.artworkId) {
-                    data.append('artwork_id', window.artworkId);
-                }
-    
-                return fetch('/drawing/save/', {
-                    method: 'POST',
-                    body: data,
-                    headers: {
-                        'X-CSRFToken': csrfToken  // CSRF token needed for Django
-                    }
-                });
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('Artwork saved successfully!');
-                    window.artworkId = data.artwork_id;  // Store artwork ID for updates
-                } else {
-                    alert(data.message || 'Error saving artwork');
-                }
-            })
-            .catch(error => {
-                console.error('Save Error:', error);
-                alert('Unable to save artwork. Please try again.');
+        if (window.$ && document.getElementById('collaborators')) {
+            $('#collaborators').select2({
+                placeholder: "Add collaborators...",
+                allowClear: true
             });
-    });
-    
-});   
+        }
+    }
+
+    initializeApplication();
+});
