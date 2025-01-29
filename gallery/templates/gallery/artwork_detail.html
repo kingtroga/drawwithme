@@ -1,0 +1,144 @@
+{% extends '_base.html' %}
+{% load static %}
+{% block title %}{{ artwork.title|default:"Untitled" }} | Artwork{% endblock %}
+{% block extra_css %}
+<style>
+    .artwork-detail {
+        max-width: 1200px;
+        margin: 0 auto;
+    }
+    
+    .artwork-image-container {
+        background-color: var(--color-canvas);
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .metadata-section {
+        background: white;
+        border-radius: 12px;
+        padding: 2rem;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+    
+    .tag {
+        display: inline-block;
+        padding: 0.25rem 0.75rem;
+        background-color: var(--color-wash);
+        border-radius: 20px;
+        font-size: 0.875rem;
+    }
+    
+    .action-button {
+        transition: all 0.3s ease;
+        border: 2px solid var(--color-ink);
+    }
+    
+    .action-button:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="artwork-detail px-4 sm:px-6 lg:px-8 py-12">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Artwork Image -->
+        <div class="artwork-image-container">
+            {% if artwork.image %}
+                <img src="{{ artwork.image.url }}" 
+                     alt="{{ artwork.title|default:'Artwork' }}" 
+                     class="w-full h-auto max-h-[70vh] object-contain">
+            {% else %}
+                <div class="text-center text-gray-400 py-16">
+                    <p class="text-lg">Artwork is processing...</p>
+                </div>
+            {% endif %}
+        </div>
+        
+        <!-- Metadata -->
+        <div class="metadata-section space-y-6">
+            <div class="flex justify-between items-start">
+                <h1 class="text-3xl brush-stroke">{{ artwork.title|default:"Untitled" }}</h1>
+                {% if request.user == artwork.creator %}
+                <div class="flex space-x-2">
+                    <a href="{% url 'edit_artwork' artwork.id %}" 
+                       class="action-button px-4 py-2 rounded-full">Edit</a>
+                    <form method="POST" action="{% url 'delete_artwork' artwork.id %}">
+                        {% csrf_token %}
+                        <button type="submit" 
+                                class="action-button px-4 py-2 rounded-full bg-red-100 border-red-200"
+                                onclick="return confirm('Are you sure you want to delete this artwork?')">
+                            Delete
+                        </button>
+                    </form>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="space-y-4">
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Created by</h3>
+                    <p class="text-lg">{{ artwork.creator.username }}</p>
+                </div>
+                
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Created at</h3>
+                    <p class="text-lg">{{ artwork.created_at|date:"F j, Y H:i" }}</p>
+                </div>
+                
+                {% if artwork.description %}
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Description</h3>
+                    <p class="text-lg whitespace-pre-wrap">{{ artwork.description }}</p>
+                </div>
+                {% endif %}
+                
+                {% if artwork.collaborators.exists %}
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Collaborators</h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% for collaborator in artwork.collaborators.all %}
+                            <span class="tag">{{ collaborator.username }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+                
+                {% if artwork.is_game_artwork and artwork.game_words %}
+                <div>
+                    <h3 class="text-sm font-medium text-gray-500">Game Words</h3>
+                    <div class="flex flex-wrap gap-2">
+                        {% for word in artwork.game_words_as_list %}
+                            <span class="tag bg-[var(--color-sage)] text-white">{{ word }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+            
+            <div class="border-t pt-4 mt-4">
+                <div class="flex justify-between text-sm text-gray-500">
+                    <span>Last updated: {{ artwork.updated_at|date:"F j, Y H:i" }}</span>
+                    <span>ID: {{ artwork.id }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Back Button -->
+    <div class="mt-8 text-center">
+        <a href="{% url 'gallery' %}" 
+           class="artistic-button px-6 py-2 rounded-full inline-block">
+            <span>Back to Gallery</span>
+        </a>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Add any interactive elements here
+});
+</script>
+{% endblock %}

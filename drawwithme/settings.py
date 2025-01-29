@@ -41,6 +41,7 @@ INSTALLED_APPS = [
     # my apps
     'core',
     'drawing',
+    'gallery',
 ]
 
 SITE_ID = 1

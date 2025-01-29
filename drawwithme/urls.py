@@ -25,6 +25,7 @@ urlpatterns = [
     path('accounts/', include('allauth.urls')),
     path('drawing/', include('drawing.urls')),
     path('', include('core.urls')),
+    path('gallery/', include('gallery.urls')),
 ]
 
 if settings.DEBUG:

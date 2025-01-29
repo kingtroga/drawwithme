@@ -102,6 +102,11 @@ class Artwork(models.Model):
             self.processing = False
             self.save(update_fields=['processing'])
             raise e
+    
+    def game_words_as_list(self):
+        if self.game_words:
+            return self.game_words.split(',')
+        return []
 
 @receiver(post_save, sender=Artwork)
 def describe_picture_on_save(sender, instance, created, **kwargs):

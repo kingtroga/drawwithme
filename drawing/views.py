@@ -54,3 +54,25 @@ def collaborate_artwork(request, artwork_id):
     if request.user not in artwork.collaborators.all() and request.user != artwork.creator:
         return redirect('index')
     return render(request, 'drawing/collaborate.html', {'artwork: artwork'})
+
+
+@login_required
+def artwork_detail(request, pk):
+    artwork = get_object_or_404(Artwork, pk=pk)
+    
+    # Check if user is creator or collaborator
+    if request.user != artwork.creator and request.user not in artwork.collaborators.all():
+        return redirect('gallery')
+    
+    context = {'artwork': artwork}
+    return render(request, 'gallery/artwork_detail.html', context)
+
+@login_required
+def delete_artwork(request, pk):
+    artwork = get_object_or_404(Artwork, pk=pk)
+
+    if artwork.image:
+        artwork.image.delete(save=False)
+
+    artwork.delete()
+    return redirect('gallery')

@@ -1,0 +1,186 @@
+{% extends '_base.html' %}
+{% load static %}
+{% block title %}Gallery{% endblock %}
+{% block extra_css %}
+<style>
+    .gallery-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 2rem;
+        padding: 2rem 0;
+    }
+
+    .artwork-card {
+        background: white;
+        border-radius: 12px;
+        overflow: hidden;
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        position: relative;
+    }
+
+    .artwork-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.08);
+    }
+
+    .artwork-image {
+        height: 240px;
+        background-color: var(--color-canvas);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .artwork-image img {
+        max-height: 100%;
+        max-width: 100%;
+        object-fit: contain;
+    }
+
+    .artwork-meta {
+        padding: 1.25rem;
+        border-top: 1px solid var(--color-canvas);
+    }
+
+    .tab-content {
+        display: none;
+        animation: fadeIn 0.3s ease;
+    }
+
+    .tab-content.active {
+        display: block;
+    }
+
+    .search-container {
+        max-width: 600px;
+        margin: 2rem auto;
+        position: relative;
+    }
+
+    .search-input {
+        width: 100%;
+        padding: 1rem 1.5rem;
+        border: 2px solid var(--color-ink);
+        border-radius: 30px;
+        font-family: 'Work Sans', sans-serif;
+        transition: all 0.3s ease;
+    }
+
+    .search-input:focus {
+        outline: none;
+        border-color: var(--color-accent);
+        box-shadow: 0 0 0 3px var(--color-wash);
+    }
+
+    .tab-button {
+        background: none;
+        border: none;
+        padding: 0.75rem 2rem;
+        font-family: 'Work Sans', sans-serif;
+        cursor: pointer;
+        position: relative;
+        color: var(--color-ink);
+        transition: all 0.3s ease;
+    }
+
+    .tab-button.active {
+        color: var(--color-accent);
+    }
+
+    .tab-button.active::after {
+        content: '';
+        position: absolute;
+        bottom: -1px;
+        left: 0;
+        right: 0;
+        height: 2px;
+        background-color: var(--color-accent);
+    }
+
+    .empty-state {
+        text-align: center;
+        padding: 4rem 0;
+        color: var(--color-sage);
+    }
+</style>
+{% endblock %}
+{% block content %}
+<div class="container mx-auto px-4 sm:px-6 lg:px-8">
+    <!-- Search Bar -->
+    <div class="search-container">
+        <input type="text" 
+               class="search-input" 
+               placeholder="Search by artwork title..."
+               hx-get="{% url 'gallery' %}"
+               hx-trigger="keyup changed delay:500ms" 
+               hx-target="#artworks-container"
+               name="q">
+    </div>
+
+    <!-- Tabs Navigation -->
+    <div class="flex justify-center border-b border-gray-200">
+        <button class="tab-button active" data-tab="personal">Personal Artworks</button>
+        <button class="tab-button" data-tab="collaborations">Collaborations</button>
+        <button class="tab-button" data-tab="game">Game Artworks</button>
+    </div>
+
+    <!-- Tab Contents -->
+    <div id="artworks-container">
+        <!-- Personal Artworks Tab -->
+        <div class="tab-content active" id="personal">
+            <div class="gallery-grid">
+                {% for artwork in artworks %}
+                    {% if not artwork.is_game_artwork and request.user == artwork.creator %}
+                        {% include 'gallery/partials/artwork_card.html' %}
+                    {% endif %}
+                {% empty %}
+                    <div class="empty-state">No personal artworks yet. Start creating!</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Collaborations Tab -->
+        <div class="tab-content" id="collaborations">
+            <div class="gallery-grid">
+                {% for artwork in collaborations %}
+                    {% include 'gallery/partials/artwork_card.html' %}
+                {% empty %}
+                    <div class="empty-state">No collaborations yet. Join a project!</div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Game Artworks Tab -->
+        <div class="tab-content" id="game">
+            <div class="gallery-grid">
+                {% for artwork in game_artworks %}
+                    {% include 'gallery/partials/artwork_card.html' %}
+                {% empty %}
+                    <div class="empty-state">No game artworks yet. Start a game!</div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Tab functionality
+        const tabs = document.querySelectorAll('[data-tab]');
+        tabs.forEach(tab => {
+            tab.addEventListener('click', function() {
+                const targetTab = this.dataset.tab;
+                
+                // Remove active class from all tabs and contents
+                document.querySelectorAll('.tab-button, .tab-content').forEach(el => {
+                    el.classList.remove('active');
+                });
+                
+                // Add active class to clicked tab and target content
+                this.classList.add('active');
+                document.getElementById(targetTab).classList.add('active');
+            });
+        });
+    });
+</script>
+{% endblock %}

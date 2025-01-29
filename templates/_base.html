@@ -220,7 +220,7 @@
                 <!-- Desktop Menu (XL and above) -->
                 <div class="hidden xl:flex items-center space-x-8">
                     {% if user.is_authenticated %}
-                        <a href="#" class="nav-link text-gray-600 hover:text-gray-900">Gallery</a>
+                        <a href="{% url 'gallery' %}" class="nav-link text-gray-600 hover:text-gray-900">Gallery</a>
                         <a href="#" class="nav-link text-gray-600 hover:text-gray-900">Collaborate</a>
                         <div class="relative group">
                             <button class="nav-link text-gray-600 hover:text-gray-900 flex items-center space-x-2">
@@ -268,7 +268,7 @@
                             <span class="font-medium text-gray-900">{{ user.username }}</span>
                         </div>
                         <div class="space-y-3 py-2">
-                            <a href="#" class="block nav-link text-gray-800 hover:text-gray-900 py-2">Gallery</a>
+                            <a href="{% url 'gallery' %}" class="block nav-link text-gray-800 hover:text-gray-900 py-2">Gallery</a>
                             <a href="#" class="block nav-link text-gray-800 hover:text-gray-900 py-2">Collaborate</a>
                             <a href="#" class="block nav-link text-gray-800 hover:text-gray-900 py-2">Profile</a>
                             <a href="#" class="block nav-link text-gray-800 hover:text-gray-900 py-2">Settings</a>
