@@ -15,7 +15,7 @@ class Artwork(models.Model):
     canvas_data = models.JSONField(blank=True, null=True)  # Fabric.js canvas state
     image = models.ImageField(upload_to='artworks/', blank=True, null=True)  # PNG export
     vector_embedding = models.JSONField(blank=True, null = True)
-    is_game_artwork = models.BooleanField(blank=True, null=True)
+    is_game_artwork = models.BooleanField(default=False)
     game_words = models.TextField(blank=True, null=True)  # Store words as a JSON string (list)
     description = models.TextField(blank=True, null=True)
     processing = models.BooleanField(default=False)
