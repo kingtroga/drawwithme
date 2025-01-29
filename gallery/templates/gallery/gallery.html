@@ -1,6 +1,12 @@
 {% extends '_base.html' %}
 {% load static %}
 {% block title %}Gallery{% endblock %}
+
+{% block extra_head %}
+<!-- HTMX CDN -->
+<script src="https://unpkg.com/htmx.org@1.9.10"></script>
+{% endblock %}
+
 {% block extra_css %}
 <style>
     .gallery-grid {
@@ -104,59 +110,66 @@
     }
 </style>
 {% endblock %}
+
 {% block content %}
 <div class="container mx-auto px-4 sm:px-6 lg:px-8">
     <!-- Search Bar -->
     <div class="search-container">
-        <input type="text" 
-               class="search-input" 
-               placeholder="Search by artwork title..."
-               hx-get="{% url 'gallery' %}"
-               hx-trigger="keyup changed delay:500ms" 
-               hx-target="#artworks-container"
-               name="q">
+        <form hx-get="{% url 'gallery' %}" 
+              hx-target="#artworks-container"
+              hx-trigger="submit, keyup changed delay:500ms">
+            <input type="text" 
+                   class="search-input" 
+                   placeholder="Search by artwork title..."
+                   name="q"
+                   value="{{ request.GET.q }}">
+            <button type="submit" class="hidden" aria-label="Search"></button>
+        </form>
     </div>
 
     <!-- Tabs Navigation -->
     <div class="flex justify-center border-b border-gray-200">
-        <button class="tab-button active" data-tab="personal">Personal Artworks</button>
-        <button class="tab-button" data-tab="collaborations">Collaborations</button>
-        <button class="tab-button" data-tab="game">Game Artworks</button>
+        <button class="tab-button {% if active_tab == 'personal' %}active{% endif %}" 
+                data-tab="personal">Personal Artworks</button>
+        <button class="tab-button {% if active_tab == 'collaborations' %}active{% endif %}" 
+                data-tab="collaborations">Collaborations</button>
+        <button class="tab-button {% if active_tab == 'game' %}active{% endif %}" 
+                data-tab="game">Game Artworks</button>
     </div>
 
     <!-- Tab Contents -->
     <div id="artworks-container">
         <!-- Personal Artworks Tab -->
-        <div class="tab-content active" id="personal">
+        <div class="tab-content {% if active_tab == 'personal' %}active{% endif %}" id="personal">
             <div class="gallery-grid">
                 {% for artwork in artworks %}
                     {% if not artwork.is_game_artwork and request.user == artwork.creator %}
                         {% include 'gallery/partials/artwork_card.html' %}
                     {% endif %}
                 {% empty %}
-                    <div class="empty-state">No personal artworks yet. Start creating!</div>
+                    <div class="empty-state">No personal artworks found</div>
                 {% endfor %}
             </div>
         </div>
 
         <!-- Collaborations Tab -->
-        <div class="tab-content" id="collaborations">
+        <div class="tab-content {% if active_tab == 'collaborations' %}active{% endif %}" id="collaborations">
             <div class="gallery-grid">
                 {% for artwork in collaborations %}
                     {% include 'gallery/partials/artwork_card.html' %}
                 {% empty %}
-                    <div class="empty-state">No collaborations yet. Join a project!</div>
+                    <div class="empty-state">No collaborations found</div>
                 {% endfor %}
             </div>
         </div>
 
         <!-- Game Artworks Tab -->
-        <div class="tab-content" id="game">
+        <div class="tab-content {% if active_tab == 'game' %}active{% endif %}" id="game">
             <div class="gallery-grid">
                 {% for artwork in game_artworks %}
                     {% include 'gallery/partials/artwork_card.html' %}
                 {% empty %}
-                    <div class="empty-state">No game artworks yet. Start a game!</div>
+                    <div class="empty-state">No game artworks found</div>
                 {% endfor %}
             </div>
         </div>
@@ -171,15 +184,31 @@
             tab.addEventListener('click', function() {
                 const targetTab = this.dataset.tab;
                 
-                // Remove active class from all tabs and contents
+                // Update URL parameter
+                const url = new URL(window.location);
+                url.searchParams.set('active_tab', targetTab);
+                window.history.replaceState({}, '', url);
+
+                // Update UI state
                 document.querySelectorAll('.tab-button, .tab-content').forEach(el => {
                     el.classList.remove('active');
                 });
-                
-                // Add active class to clicked tab and target content
                 this.classList.add('active');
                 document.getElementById(targetTab).classList.add('active');
             });
+        });
+
+        // Preserve tab state during HTMX requests
+        document.body.addEventListener('htmx:configRequest', function(evt) {
+            const activeTab = document.querySelector('.tab-button.active').dataset.tab;
+            evt.detail.parameters['active_tab'] = activeTab;
+        });
+
+        // Restore scroll position after HTMX updates
+        document.body.addEventListener('htmx:afterSwap', function(evt) {
+            if(evt.detail.target.id === 'artworks-container') {
+                window.scrollTo(0, document.body.scrollHeight);
+            }
         });
     });
 </script>

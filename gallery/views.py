@@ -5,21 +5,17 @@ from django.contrib.auth.decorators import login_required
 @login_required
 def gallery(request):
     query = request.GET.get('q', '')
+    active_tab = request.GET.get('active_tab', 'personal')
     
-    personal = Artwork.objects.filter(creator=request.user, is_game_artwork=False)
-    collaborations = Artwork.objects.filter(collaborators=request.user)
-    game_artworks = Artwork.objects.filter(creator=request.user, is_game_artwork=True)
-    
-    if query:
-        personal = personal.filter(title__icontains=query)
-        collaborations = collaborations.filter(title__icontains=query)
-        game_artworks = game_artworks.filter(title__icontains=query)
+    base_query = Artwork.objects.filter(title__icontains=query)
     
     context = {
-        'artworks': personal,
-        'collaborations': collaborations,
-        'game_artworks': game_artworks,
-        'query': query
+        'artworks': base_query.filter(creator=request.user),
+        'collaborations': request.user.collaborations.filter(title__icontains=query),
+        'game_artworks': base_query.filter(is_game_artwork=True),
+        'active_tab': active_tab,
+        'request': request
     }
     return render(request, 'gallery/gallery.html', context)
-    
+
+
