@@ -78,10 +78,10 @@ document.addEventListener('DOMContentLoaded', function () {
     function initializeBrushes() {
         erasingBrush.color = 'white';
         erasingBrush.globalCompositeOperation = 'destination-out';
-        drawingBrush.color = document.getElementById('color-picker').value;
-        drawingBrush.width = parseInt(document.getElementById('brush-size').value, 10);
+        drawingBrush.color = getValueSafe('color-picker', '#000000');
+        drawingBrush.width = parseInt(getValueSafe('brush-size', '5'), 10);
         erasingBrush.width = drawingBrush.width;
-        canvas.backgroundColor = document.getElementById('background-color').value;
+        canvas.backgroundColor = getValueSafe('background-color', '#ffffff');
         canvas.renderAll();
     }
 
@@ -140,24 +140,30 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     };
 
-    // Event listeners
-    document.getElementById('pencil-tool').addEventListener('click', tools.pencil);
-    document.getElementById('eraser-tool').addEventListener('click', tools.eraser);
-    document.getElementById('selection-tool').addEventListener('click', tools.selection);
+    // Safe element value getter
+    function getValueSafe(id, defaultValue = '') {
+        const el = document.getElementById(id);
+        return el ? el.value : defaultValue;
+    }
 
-    document.getElementById('brush-size').addEventListener('input', (e) => {
+    // Event listeners
+    document.getElementById('pencil-tool')?.addEventListener('click', tools.pencil);
+    document.getElementById('eraser-tool')?.addEventListener('click', tools.eraser);
+    document.getElementById('selection-tool')?.addEventListener('click', tools.selection);
+
+    document.getElementById('brush-size')?.addEventListener('input', (e) => {
         const size = parseInt(e.target.value, 10);
         drawingBrush.width = size;
         erasingBrush.width = size;
         if (canvas.isDrawingMode) canvas.freeDrawingBrush.width = size;
     });
 
-    document.getElementById('color-picker').addEventListener('change', (e) => {
+    document.getElementById('color-picker')?.addEventListener('change', (e) => {
         drawingBrush.color = e.target.value;
         if (currentMode === 'pencil') canvas.freeDrawingBrush.color = e.target.value;
     });
 
-    document.getElementById('background-color').addEventListener('change', (e) => {
+    document.getElementById('background-color')?.addEventListener('change', (e) => {
         canvas.setBackgroundColor(e.target.value, () => canvas.renderAll());
     });
 
@@ -169,16 +175,26 @@ document.addEventListener('DOMContentLoaded', function () {
         }
 
         const formData = new FormData();
-        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]').value;
+        const csrfToken = document.querySelector('[name=csrfmiddlewaretoken]')?.value;
 
-        formData.append('title', document.getElementById('artwork-title').value || 'Untitled');
-        formData.append('description', document.getElementById('artwork-description')?.value || '');
-        formData.append('collaborators', Array.from(document.getElementById('collaborators').selectedOptions)
-            .map(opt => opt.value).join(','));
+        if (!csrfToken) {
+            showNotification('Missing CSRF token', 'error');
+            return;
+        }
+
+        // Handle collaborators safely
+        const collaboratorsSelect = document.getElementById('collaborators');
+        const collaborators = collaboratorsSelect ? 
+            Array.from(collaboratorsSelect.selectedOptions).map(opt => opt.value).join(',') : 
+            '';
+
+        formData.append('title', getValueSafe('artwork-title', 'Untitled'));
+        formData.append('description', getValueSafe('artwork-description'));
+        formData.append('collaborators', collaborators);
         formData.append('canvas_data', JSON.stringify(canvas.toJSON()));
         formData.append('background_color', canvas.backgroundColor);
-        formData.append('brush_size', document.getElementById('brush-size').value);
-        formData.append('drawing_color', document.getElementById('color-picker').value);
+        formData.append('brush_size', getValueSafe('brush-size', '5'));
+        formData.append('drawing_color', getValueSafe('color-picker', '#000000'));
         formData.append('csrfmiddlewaretoken', csrfToken);
 
         try {
@@ -187,7 +203,7 @@ document.addEventListener('DOMContentLoaded', function () {
             const blob = await response.blob();
             formData.append('image', blob, `artwork-${Date.now()}.png`);
 
-            const endpoint = isUpdate ? `/drawing/edit/${encodeURIComponent(artworkId)}/` : '/drawing/create/';
+            const endpoint = isUpdate ? `/drawing/edit/${encodeURIComponent(artworkId)}/` : '/drawing/save/';
             const method = isUpdate ? 'PUT' : 'POST';
 
             const saveResponse = await fetch(endpoint, {
