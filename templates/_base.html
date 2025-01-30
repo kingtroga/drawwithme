@@ -224,7 +224,7 @@
                         <a href="#" class="nav-link text-gray-600 hover:text-gray-900">Collaborate</a>
                         <div class="relative group">
                             <button class="nav-link text-gray-600 hover:text-gray-900 flex items-center space-x-2">
-                                <img src="{{ profile.avatar.url }}" 
+                                <img src="{{ user.profile.avatar.url }}" 
                                     alt="Profile" 
                                     class="w-8 h-8 rounded-full">
                                 <span>{{ user.username }}</span>
@@ -262,7 +262,7 @@
                 <div class="px-6 py-6 space-y-4 bg-[var(--color-mobile-menu)]">
                     {% if user.is_authenticated %}
                         <div class="flex items-center space-x-3 pb-4 border-b border-gray-200/20">
-                            <img src="{{ profile.avatar.url }}" 
+                            <img src="{{ user.profile.avatar.url }}" 
                                 alt="Profile" 
                                 class="w-10 h-10 rounded-full">
                             <span class="font-medium text-gray-900">{{ user.username }}</span>
